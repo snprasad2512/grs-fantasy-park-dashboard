@@ -895,14 +895,33 @@ function renderManagerSubmissions() {
     const filterZone = document.getElementById('mgr-filter-zone')?.value || 'all';
     const search = (document.getElementById('mgr-search')?.value || '').toLowerCase();
 
+    const todayStr = new Date().toISOString().split('T')[0];
+    const now = new Date();
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
     const filtered = readings.filter(r => {
+        const time = r.timestamp || new Date(r.datetime).getTime();
+        const matchPeriod = activeManagerPeriod === 'daily' 
+            ? (r.datetime && r.datetime.startsWith(todayStr))
+            : (activeManagerPeriod === 'weekly' 
+                ? (time >= sevenDaysAgo.getTime() && time <= now.getTime())
+                : (activeManagerPeriod === 'monthly'
+                    ? (time >= thirtyDaysAgo.getTime() && time <= now.getTime())
+                    : true));
+
         const matchStatus = filterStatus === 'all' || 
             (filterStatus === 'pending' && (r.status === 'pending' || r.status === 'verified_by_sup')) || 
             r.status === filterStatus;
         const matchZone = filterZone === 'all' || (r.zone || '') === filterZone;
         const matchSearch = r.meterName.toLowerCase().includes(search) || r.techName.toLowerCase().includes(search) || r.value.toString().includes(search);
-        return matchStatus && matchZone && matchSearch;
+        return matchPeriod && matchStatus && matchZone && matchSearch;
     });
+
+    if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-muted)">No technician submissions matching the selected report period (${activeManagerPeriod.toUpperCase()}) or status filter.</td></tr>`;
+        return;
+    }
 
     tbody.innerHTML = filtered.map(r => `
         <tr>
@@ -986,6 +1005,23 @@ function switchMgrTab(tab) {
     } else if (tab === 'reports') {
         window.scrollTo({ top: 150, behavior: 'smooth' });
     }
+}
+
+function setManagerStatusFilter(status) {
+    const sel = document.getElementById('mgr-filter-status');
+    if (sel) sel.value = status;
+    renderManagerSubmissions();
+    window.scrollTo({ top: 450, behavior: 'smooth' });
+}
+
+function switchManagerToWeeklyComparison() {
+    activeManagerPeriod = 'weekly';
+    document.querySelectorAll('#mgr-period-tabs .report-tab').forEach(t => {
+        t.classList.toggle('active', t.dataset.period === 'weekly');
+    });
+    renderManagerChart();
+    renderManagerSubmissions();
+    window.scrollTo({ top: 180, behavior: 'smooth' });
 }
 
 // ─── 3. SUPERVISOR DASHBOARD LOGIC ───
@@ -1644,9 +1680,36 @@ function saveSubmission() {
 
 // ─── EXPORT TO EXCEL (`SheetJS`) ───
 function exportToExcel() {
-    const readings = getReadings();
+    let readings = getReadings();
+    if (currentRoleTab === 'manager') {
+        const filterStatus = document.getElementById('mgr-filter-status')?.value || 'all';
+        const filterZone = document.getElementById('mgr-filter-zone')?.value || 'all';
+        const search = (document.getElementById('mgr-search')?.value || '').toLowerCase();
+        const todayStr = new Date().toISOString().split('T')[0];
+        const now = new Date();
+        const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+        readings = readings.filter(r => {
+            const time = r.timestamp || new Date(r.datetime).getTime();
+            const matchPeriod = activeManagerPeriod === 'daily' 
+                ? (r.datetime && r.datetime.startsWith(todayStr))
+                : (activeManagerPeriod === 'weekly' 
+                    ? (time >= sevenDaysAgo.getTime() && time <= now.getTime())
+                    : (activeManagerPeriod === 'monthly'
+                        ? (time >= thirtyDaysAgo.getTime() && time <= now.getTime())
+                        : true));
+            const matchStatus = filterStatus === 'all' || 
+                (filterStatus === 'pending' && (r.status === 'pending' || r.status === 'verified_by_sup')) || 
+                r.status === filterStatus;
+            const matchZone = filterZone === 'all' || (r.zone || '') === filterZone;
+            const matchSearch = r.meterName.toLowerCase().includes(search) || r.techName.toLowerCase().includes(search) || r.value.toString().includes(search);
+            return matchPeriod && matchStatus && matchZone && matchSearch;
+        });
+    }
+
     if (readings.length === 0) {
-        showToast('No readings available to export!', 'error');
+        showToast('No readings available to export for the selected filters!', 'error');
         return;
     }
 

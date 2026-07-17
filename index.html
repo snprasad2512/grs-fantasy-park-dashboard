@@ -243,7 +243,7 @@
 
     <main class="main-content" id="mgr-main">
         <!-- Week-over-Week Comparison KPI Card -->
-        <div class="wow-card" id="mgr-wow-card">
+        <div class="wow-card" id="mgr-wow-card" onclick="switchManagerToWeeklyComparison()" style="cursor:pointer" title="Click to view weekly breakdown and report">
             <div class="wow-left">
                 <div class="wow-label">Week-over-Week Energy Consumption</div>
                 <div class="wow-numbers">
@@ -259,10 +259,10 @@
 
         <!-- Manager Stats -->
         <div class="stats-grid">
-            <div class="stat-card stat-total"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div class="stat-value" id="mgr-stat-total">0</div><div class="stat-label">All Submissions</div></div>
-            <div class="stat-card stat-pending"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div class="stat-value" id="mgr-stat-pending">0</div><div class="stat-label">Pending Approval</div></div>
-            <div class="stat-card stat-confirmed"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div><div class="stat-value" id="mgr-stat-approved">0</div><div class="stat-label">Approved</div></div>
-            <div class="stat-card stat-today"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div><div class="stat-value" id="mgr-stat-rejected">0</div><div class="stat-label">Rejected</div></div>
+            <div class="stat-card stat-total" onclick="setManagerStatusFilter('all')" style="cursor:pointer" title="Click to view all submissions"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div class="stat-value" id="mgr-stat-total">0</div><div class="stat-label">All Submissions</div></div>
+            <div class="stat-card stat-pending" onclick="setManagerStatusFilter('pending')" style="cursor:pointer" title="Click to filter pending review"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div class="stat-value" id="mgr-stat-pending">0</div><div class="stat-label">Pending Approval</div></div>
+            <div class="stat-card stat-confirmed" onclick="setManagerStatusFilter('approved')" style="cursor:pointer" title="Click to view approved readings"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div><div class="stat-value" id="mgr-stat-approved">0</div><div class="stat-label">Approved Readings</div></div>
+            <div class="stat-card stat-today" onclick="setManagerStatusFilter('rejected')" style="cursor:pointer" title="Click to filter rejected"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div><div class="stat-value" id="mgr-stat-rejected">0</div><div class="stat-label">Rejected</div></div>
         </div>
 
         <!-- Manager Period Tabs -->
@@ -278,6 +278,7 @@
         <div class="section-header" style="margin-top:1.5rem">
             <h2>Technician Submissions Review</h2>
             <div class="mgr-exports">
+                <button class="btn-export" style="background:var(--accent-green, #22c55e);color:#000;font-weight:700" onclick="setManagerStatusFilter('approved')" title="Quickly filter and view all approved readings">✔ Approved Readings</button>
                 <button class="btn-export" onclick="exportToExcel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Excel</button>
                 <button class="btn-export btn-export-pdf" onclick="exportToPDF()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>PDF Report</button>
             </div>
