@@ -1060,6 +1060,15 @@ function switchManagerToWeeklyComparison() {
     window.scrollTo({ top: 180, behavior: 'smooth' });
 }
 
+function setSupervisorStatusFilter(status) {
+    const statusSelect = document.getElementById('filter-status');
+    if (statusSelect) {
+        statusSelect.value = status;
+        renderSupervisorReadings();
+        window.scrollTo({ top: 400, behavior: 'smooth' });
+    }
+}
+
 // ─── 3. SUPERVISOR DASHBOARD LOGIC ───
 function renderSupervisorDashboard() {
     document.getElementById('sup-name').textContent = currentUser.name;
@@ -1134,7 +1143,9 @@ function renderSupervisorReadings() {
             : (r.datetime && r.datetime.startsWith(todayStr));
 
         const matchMeter = filterMeter === 'all' || r.meterId === filterMeter;
-        const matchStatus = filterStatus === 'all' || r.status === filterStatus;
+        const matchStatus = filterStatus === 'all' || 
+            (filterStatus === 'pending' && (r.status === 'pending' || r.status === 'verified_by_sup')) || 
+            r.status === filterStatus;
         const matchTech = filterTech === 'all' || r.techId === filterTech;
         const matchSearch = r.meterName.toLowerCase().includes(search) || r.techName.toLowerCase().includes(search) || r.value.toString().includes(search);
         return matchPeriod && matchMeter && matchStatus && matchTech && matchSearch;
