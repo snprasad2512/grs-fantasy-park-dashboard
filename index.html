@@ -405,12 +405,21 @@
         </div>
 
         <!-- Energy Meter Management Module CTA -->
-        <div class="quick-capture-card" id="quick-capture-cta">
-            <div class="qc-left">
-                <h3>⚡ Energy Meter Management Module</h3>
-                <p>Select meter, capture/upload photo & AI extract OCR reading</p>
+        <div class="quick-capture-card" id="quick-capture-cta" style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;padding:1.5rem;background:linear-gradient(135deg, rgba(168,85,247,0.15), rgba(34,211,238,0.1));border:1px solid rgba(168,85,247,0.3);border-radius:16px">
+            <div class="qc-left" style="flex:1;min-width:220px">
+                <h3 style="font-size:1.15rem;font-weight:700;color:#fff;margin-bottom:6px">⚡ Energy Meter Management Module</h3>
+                <p style="font-size:0.88rem;color:var(--text-secondary)">Select meter card below or use direct buttons to capture camera photo or upload from gallery.</p>
             </div>
-            <button class="qc-btn" id="btn-quick-capture">Capture Reading</button>
+            <div style="display:flex;gap:12px;flex-wrap:wrap">
+                <button type="button" class="qc-btn" id="btn-quick-capture" style="background:linear-gradient(135deg, #a855f7, #6366f1);color:#fff;font-weight:700;padding:12px 18px;border-radius:10px;display:flex;align-items:center;gap:8px;border:none;cursor:pointer" onclick="openCaptureScreen(); setTimeout(() => startCamera(), 300);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                    Capture Photo
+                </button>
+                <button type="button" class="qc-btn" id="btn-quick-upload" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.25);color:#fff;font-weight:700;padding:12px 18px;border-radius:10px;display:flex;align-items:center;gap:8px;cursor:pointer" onclick="openCaptureScreen(); setTimeout(() => document.getElementById('file-input')?.click(), 300);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    Upload Photo
+                </button>
+            </div>
         </div>
 
         <!-- Meter Selection Grid -->
@@ -488,13 +497,14 @@
                 </div>
                 <img id="preview-image" class="preview-image" style="display:none" alt="Captured meter">
             </div>
-            <div class="capture-controls" id="capture-controls">
-                <button class="btn-capture" id="btn-open-camera" title="Open Camera">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            <div class="capture-controls" id="capture-controls" style="display:flex;gap:14px;justify-content:center;align-items:center;padding:1.5rem 0;flex-wrap:wrap">
+                <button class="btn-primary" id="btn-open-camera" style="padding:14px 22px;border-radius:12px;font-weight:700;display:flex;align-items:center;gap:8px;background:linear-gradient(135deg, #a855f7, #6366f1);color:#fff;border:none;cursor:pointer;font-size:1rem" title="Capture Photo from Device Camera">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                    Capture Photo
                 </button>
-                <div class="capture-divider"><span>or</span></div>
-                <button class="btn-upload" id="btn-upload">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <div class="capture-divider" style="color:var(--text-muted);font-weight:700"><span>or</span></div>
+                <button class="btn-secondary" id="btn-upload" style="padding:14px 22px;border-radius:12px;font-weight:700;display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.08);color:#fff;border:1px solid rgba(255,255,255,0.25);cursor:pointer;font-size:1rem" title="Select Image from Gallery">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                     Upload Photo
                 </button>
                 <input type="file" id="file-input" accept="image/*" style="display:none">

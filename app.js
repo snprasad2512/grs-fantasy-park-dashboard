@@ -1381,15 +1381,25 @@ function renderTechMeters() {
     }
 
     grid.innerHTML = filtered.map(m => `
-        <div class="meter-card" onclick="selectAndCapture('${m.id}')">
-            <div class="meter-icon ${m.iconColor}">${m.icon}</div>
-            <div class="meter-info">
-                <div class="meter-name">${m.name}</div>
-                <div class="meter-location">📍 ${m.location}</div>
-                <div class="meter-last"><span class="consumption-tag">${m.zone || 'Central Utility'}</span> | Last: ${m.prevReading.toFixed(2)} kWh</div>
-            </div>
-            <div class="meter-actions" onclick="e => e.stopPropagation()">
+        <div class="meter-card" style="display:flex;flex-direction:column;align-items:stretch;gap:14px;padding:16px;background:var(--bg-card);border:1px solid rgba(255,255,255,0.08);border-radius:14px">
+            <div style="display:flex;align-items:center;gap:14px;cursor:pointer" onclick="selectAndCapture('${m.id}')">
+                <div class="meter-icon ${m.iconColor}" style="flex-shrink:0;width:52px;height:52px;font-size:1.6rem;display:flex;align-items:center;justify-content:center;border-radius:12px">${m.icon}</div>
+                <div class="meter-info" style="flex:1">
+                    <div class="meter-name" style="font-weight:700;font-size:1.08rem;color:#fff">${m.name}</div>
+                    <div class="meter-location" style="font-size:0.88rem;color:var(--text-secondary);margin-top:2px">📍 ${m.location}</div>
+                    <div class="meter-last" style="font-size:0.82rem;color:var(--text-muted);margin-top:6px"><span class="consumption-tag" style="background:rgba(168,85,247,0.18);color:#a855f7;padding:3px 8px;border-radius:6px;font-weight:600">${m.zone || 'Central Utility'}</span> | Last: ${m.prevReading.toFixed(2)} kWh</div>
+                </div>
                 <div class="meter-status ${m.status}" title="Status: ${m.status}"></div>
+            </div>
+            <div style="display:flex;gap:12px;margin-top:4px;border-top:1px solid rgba(255,255,255,0.06);padding-top:14px" onclick="event.stopPropagation()">
+                <button type="button" class="btn-primary" style="flex:1;padding:12px 14px;font-size:0.92rem;display:flex;align-items:center;justify-content:center;gap:8px;border-radius:10px;background:linear-gradient(135deg, #a855f7, #6366f1);color:#fff;border:none;font-weight:700;cursor:pointer" onclick="selectAndCapture('${m.id}', 'camera')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                    Capture Photo
+                </button>
+                <button type="button" class="btn-secondary" style="flex:1;padding:12px 14px;font-size:0.92rem;display:flex;align-items:center;justify-content:center;gap:8px;border-radius:10px;background:rgba(255,255,255,0.08);color:#fff;border:1px solid rgba(255,255,255,0.2);font-weight:700;cursor:pointer" onclick="selectAndCapture('${m.id}', 'upload')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    Upload Photo
+                </button>
             </div>
         </div>
     `).join('');
@@ -1400,7 +1410,7 @@ function openTechEditMeter(e, meterId) {
     openAdminEditMeter(meterId);
 }
 
-function selectAndCapture(meterId) {
+function selectAndCapture(meterId, action = null) {
     selectedCaptureMeterId = meterId;
     const m = getMeters().find(x => x.id === meterId);
     if (m) {
@@ -1413,6 +1423,12 @@ function selectAndCapture(meterId) {
     if (select) select.value = meterId;
     updateSelectedMeterCard();
     openCaptureScreen();
+
+    if (action === 'camera') {
+        setTimeout(() => { startCamera(); }, 350);
+    } else if (action === 'upload') {
+        setTimeout(() => { document.getElementById('file-input')?.click(); }, 350);
+    }
 }
 
 function updateSelectedMeterCard() {
@@ -1530,6 +1546,12 @@ function capturePhotoFromStream() {
     preview.src = capturedImageData;
     preview.style.display = 'block';
     document.getElementById('temp-capture-btn')?.remove();
+
+    if (selectedCaptureMeterId) {
+        setTimeout(() => { runAI_OCR(); }, 350);
+    } else {
+        showToast('Photo captured! Please select the assigned Energy Meter above to auto-detect reading.', 'info');
+    }
 }
 
 function stopCamera() {
@@ -1557,6 +1579,12 @@ function handleFileUpload(e) {
         document.getElementById('viewfinder-placeholder').style.display = 'none';
         document.getElementById('capture-controls').style.display = 'none';
         document.getElementById('after-capture-controls').style.display = 'flex';
+
+        if (selectedCaptureMeterId) {
+            setTimeout(() => { runAI_OCR(); }, 350);
+        } else {
+            showToast('Photo loaded! Please select the assigned Energy Meter above to auto-detect reading.', 'info');
+        }
     };
     reader.readAsDataURL(file);
 }
