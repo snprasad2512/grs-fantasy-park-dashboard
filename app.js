@@ -40,13 +40,36 @@ const DEFAULT_METERS = [
     { id: 'EM-020', name: 'Backup Generator Sync Panel 2', location: 'Generator Yard Beta', zone: 'Central Utility', prevReading: 8820.50, status: 'active', icon: '⚙️', iconColor: 'purple' }
 ];
 
+// ─── DEFAULT PARK LOCATIONS DATA ───
+const DEFAULT_LOCATIONS = [
+    { id: 'LOC-001', name: 'Substation Alpha (North Gate)', zone: 'Central Utility', description: 'Main grid incomer room and high voltage switchgear', metersCount: 2 },
+    { id: 'LOC-002', name: 'Thrill Valley Power Room', zone: 'Thrill Valley', description: 'Power distribution room for major thrill rides', metersCount: 1 },
+    { id: 'LOC-003', name: 'Thrill Valley Ride Control', zone: 'Thrill Valley', description: 'Roller coaster main drive inverter room', metersCount: 1 },
+    { id: 'LOC-004', name: 'Thrill Valley South', zone: 'Thrill Valley', description: 'Sky Wheels and Tower Drop feeder kiosk', metersCount: 1 },
+    { id: 'LOC-005', name: 'Aqua World Pump House 1', zone: 'Aqua World', description: 'Filtration plant and wave pool hydraulic drives', metersCount: 1 },
+    { id: 'LOC-006', name: 'Aqua World Plant Room 2', zone: 'Aqua World', description: 'Chiller unit and lazy river booster pumps', metersCount: 1 },
+    { id: 'LOC-007', name: 'Aqua World Pump House 3', zone: 'Aqua World', description: 'High volume booster pumps for water slides', metersCount: 1 },
+    { id: 'LOC-008', name: 'Main Food Plaza Rooftop', zone: 'Food & Hospitality', description: 'Central HVAC condenser bank and exhaust fans', metersCount: 1 },
+    { id: 'LOC-009', name: 'Main Food Plaza Basement', zone: 'Food & Hospitality', description: 'Banquet and commercial restaurant kitchen feeders', metersCount: 1 },
+    { id: 'LOC-010', name: 'Kids Zone Control Booth', zone: 'Kids Fantasy Land', description: 'Central power distribution for children rides', metersCount: 1 },
+    { id: 'LOC-011', name: 'Kids Zone East Pavilion', zone: 'Kids Fantasy Land', description: 'Carousel, bumper cars, and arcade feeder kiosk', metersCount: 1 },
+    { id: 'LOC-012', name: 'Mystic Zone Building B', zone: 'Mystic Zone', description: 'Haunted Mansion dark ride animatronics control room', metersCount: 1 },
+    { id: 'LOC-013', name: 'Entertainment Complex', zone: 'Mystic Zone', description: '4D Cinema, projector bank, and laser show room', metersCount: 1 },
+    { id: 'LOC-014', name: 'Lighting Control Panel 1', zone: 'Common Infrastructure', description: 'East perimeter lighting and walkways kiosk', metersCount: 1 },
+    { id: 'LOC-015', name: 'Lighting Control Panel 2', zone: 'Common Infrastructure', description: 'West perimeter lighting and parking lot feeds', metersCount: 1 },
+    { id: 'LOC-016', name: 'Admin HQ Building Ground Floor', zone: 'Administration', description: 'Main office block, server room, and UPS battery bank', metersCount: 1 },
+    { id: 'LOC-017', name: 'Main Entrance Gate Complex', zone: 'Administration', description: 'Turnstiles, ticketing booths, and security scanners', metersCount: 1 },
+    { id: 'LOC-018', name: 'Generator Yard Alpha', zone: 'Central Utility', description: 'Backup Diesel Generator 1 sync and ATS panel', metersCount: 1 },
+    { id: 'LOC-019', name: 'Generator Yard Beta', zone: 'Central Utility', description: 'Backup Diesel Generator 2 sync and ATS panel', metersCount: 1 }
+];
+
 // Global State
 let currentUser = null;
 let currentRoleTab = 'technician';
 let cameraStream = null;
 let capturedImageData = null;
 let selectedCaptureMeterId = null;
-let activeAdminModule = 'users';
+let activeAdminModule = 'technicians';
 let activeManagerPeriod = 'daily';
 let activeSupervisorPeriod = 'daily';
 let chartsInstance = { admin: null, manager: null, supervisor: null };
@@ -64,6 +87,9 @@ function initStorage() {
     }
     if (!localStorage.getItem('grs_meters')) {
         localStorage.setItem('grs_meters', JSON.stringify(DEFAULT_METERS));
+    }
+    if (!localStorage.getItem('grs_locations')) {
+        localStorage.setItem('grs_locations', JSON.stringify(DEFAULT_LOCATIONS));
     }
     if (!localStorage.getItem('grs_readings')) {
         // Seed historical readings across the last 14 days for week-over-week comparison & analytics
@@ -113,6 +139,8 @@ function getUsers() { return JSON.parse(localStorage.getItem('grs_users') || '[]
 function saveUsers(users) { localStorage.setItem('grs_users', JSON.stringify(users)); }
 function getMeters() { return JSON.parse(localStorage.getItem('grs_meters') || '[]'); }
 function saveMeters(meters) { localStorage.setItem('grs_meters', JSON.stringify(meters)); }
+function getLocations() { return JSON.parse(localStorage.getItem('grs_locations') || '[]'); }
+function saveLocations(locs) { localStorage.setItem('grs_locations', JSON.stringify(locs)); }
 function getReadings() { return JSON.parse(localStorage.getItem('grs_readings') || '[]'); }
 function saveReadings(readings) { localStorage.setItem('grs_readings', JSON.stringify(readings)); }
 
@@ -184,11 +212,14 @@ function setupEventListeners() {
     document.querySelectorAll('#admin-module-tabs .report-tab').forEach(tab => {
         tab.addEventListener('click', () => switchAdminTab(tab.dataset.module));
     });
-    document.getElementById('adm-filter-role')?.addEventListener('change', renderAdminUsers);
-    document.getElementById('adm-search-users')?.addEventListener('input', renderAdminUsers);
+    document.getElementById('adm-search-technicians')?.addEventListener('input', renderAdminTechnicians);
+    document.getElementById('adm-search-supervisors')?.addEventListener('input', renderAdminSupervisors);
+    document.getElementById('adm-search-managers')?.addEventListener('input', renderAdminManagers);
+    document.getElementById('adm-search-locations')?.addEventListener('input', renderAdminLocations);
     document.getElementById('adm-search-meters')?.addEventListener('input', renderAdminMeters);
     document.getElementById('btn-save-user')?.addEventListener('click', handleSaveUserModal);
     document.getElementById('btn-save-meter')?.addEventListener('click', handleSaveMeterModal);
+    document.getElementById('btn-save-location')?.addEventListener('click', handleSaveLocationModal);
     document.getElementById('edit-meter-close')?.addEventListener('click', () => document.getElementById('edit-meter-overlay').style.display = 'none');
 
     // Manager Period Tabs & Filters
@@ -300,21 +331,7 @@ function showDashboardForRole(role) {
     } else if (role === 'supervisor') {
         renderSupervisorDashboard();
         showScreen('supervisor-dashboard');
-    } else {
-        renderTechDashboard();
-        showScreen('tech-dashboard');
-    }
-}
-
-// ─── SCREEN ROUTING ───
-function showScreen(screenId) {
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    const target = document.getElementById(screenId);
-    if (target) target.classList.add('active');
-    window.scrollTo(0, 0);
-}
-
-// ─── 1. ADMIN DASHBOARD LOGIC ───
+   // ─── 1. ADMIN DASHBOARD LOGIC ───
 function renderAdminDashboard() {
     document.getElementById('admin-greeting').textContent = `Welcome, Administrator`;
     document.getElementById('admin-name').textContent = currentUser.name;
@@ -329,7 +346,10 @@ function renderAdminDashboard() {
     document.getElementById('adm-stat-meters').textContent = meters.length;
     document.getElementById('adm-stat-readings').textContent = readings.length;
 
-    renderAdminUsers();
+    renderAdminTechnicians();
+    renderAdminSupervisors();
+    renderAdminManagers();
+    renderAdminLocations();
     renderAdminMeters();
     renderAdminSystemTable();
     renderAdminChart();
@@ -344,34 +364,83 @@ function switchAdminTab(module) {
     const target = document.getElementById(`adm-tab-${module}`);
     if (target) target.style.display = 'block';
 
-    if (module === 'system') renderAdminChart();
+    if (module === 'technicians') renderAdminTechnicians();
+    else if (module === 'supervisors') renderAdminSupervisors();
+    else if (module === 'managers') renderAdminManagers();
+    else if (module === 'locations') renderAdminLocations();
+    else if (module === 'meters') renderAdminMeters();
+    else if (module === 'system') renderAdminChart();
 }
 
-function renderAdminUsers() {
-    const tbody = document.getElementById('adm-users-tbody');
+function renderAdminTechnicians() {
+    const tbody = document.getElementById('adm-technicians-tbody');
     if (!tbody) return;
-    const users = getUsers();
-    const filterRole = document.getElementById('adm-filter-role')?.value || 'all';
-    const search = (document.getElementById('adm-search-users')?.value || '').toLowerCase();
-
-    const filtered = users.filter(u => {
-        const matchRole = filterRole === 'all' || u.role === filterRole;
-        const matchSearch = u.id.toLowerCase().includes(search) || u.name.toLowerCase().includes(search) || u.role.toLowerCase().includes(search);
-        return matchRole && matchSearch;
-    });
-
-    document.getElementById('adm-users-count').textContent = filtered.length;
+    const users = getUsers().filter(u => u.role === 'technician');
+    const search = (document.getElementById('adm-search-technicians')?.value || '').toLowerCase();
+    const filtered = users.filter(u => u.id.toLowerCase().includes(search) || u.name.toLowerCase().includes(search) || (u.title || '').toLowerCase().includes(search));
+    
+    document.getElementById('adm-technicians-count').textContent = filtered.length;
     tbody.innerHTML = filtered.map(u => `
         <tr>
             <td><strong>${u.id}</strong></td>
             <td>${u.name}</td>
-            <td><span class="badge" style="background:rgba(168,85,247,0.18);color:#d8b4fe">${u.role.toUpperCase()}</span></td>
-            <td>${u.title || 'Staff Member'}</td>
+            <td>${u.title || 'Senior Electrical Tech'}</td>
+            <td><code>${u.password}</code></td>
             <td><button class="btn-status-toggle ${u.status === 'active' ? 'active' : ''}" onclick="toggleUserStatus('${u.id}')">${u.status === 'active' ? '● Active' : '○ Suspended'}</button></td>
             <td>
                 <div class="action-btns">
                     <button class="btn-sm btn-sm-edit" onclick="openEditUserModal('${u.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Edit</button>
-                    ${u.id !== currentUser.id ? `<button class="btn-sm btn-sm-del" onclick="deleteUser('${u.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>` : ''}
+                    <button class="btn-sm btn-sm-del" onclick="deleteUser('${u.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function renderAdminSupervisors() {
+    const tbody = document.getElementById('adm-supervisors-tbody');
+    if (!tbody) return;
+    const users = getUsers().filter(u => u.role === 'supervisor');
+    const search = (document.getElementById('adm-search-supervisors')?.value || '').toLowerCase();
+    const filtered = users.filter(u => u.id.toLowerCase().includes(search) || u.name.toLowerCase().includes(search) || (u.title || '').toLowerCase().includes(search));
+    
+    document.getElementById('adm-supervisors-count').textContent = filtered.length;
+    tbody.innerHTML = filtered.map(u => `
+        <tr>
+            <td><strong>${u.id}</strong></td>
+            <td>${u.name}</td>
+            <td>${u.title || 'Maintenance Supervisor'}</td>
+            <td><code>${u.password}</code></td>
+            <td><button class="btn-status-toggle ${u.status === 'active' ? 'active' : ''}" onclick="toggleUserStatus('${u.id}')">${u.status === 'active' ? '● Active' : '○ Suspended'}</button></td>
+            <td>
+                <div class="action-btns">
+                    <button class="btn-sm btn-sm-edit" onclick="openEditUserModal('${u.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Edit</button>
+                    <button class="btn-sm btn-sm-del" onclick="deleteUser('${u.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function renderAdminManagers() {
+    const tbody = document.getElementById('adm-managers-tbody');
+    if (!tbody) return;
+    const users = getUsers().filter(u => u.role === 'manager');
+    const search = (document.getElementById('adm-search-managers')?.value || '').toLowerCase();
+    const filtered = users.filter(u => u.id.toLowerCase().includes(search) || u.name.toLowerCase().includes(search) || (u.title || '').toLowerCase().includes(search));
+    
+    document.getElementById('adm-managers-count').textContent = filtered.length;
+    tbody.innerHTML = filtered.map(u => `
+        <tr>
+            <td><strong>${u.id}</strong></td>
+            <td>${u.name}</td>
+            <td>${u.title || 'Operations Manager'}</td>
+            <td><code>${u.password}</code></td>
+            <td><button class="btn-status-toggle ${u.status === 'active' ? 'active' : ''}" onclick="toggleUserStatus('${u.id}')">${u.status === 'active' ? '● Active' : '○ Suspended'}</button></td>
+            <td>
+                <div class="action-btns">
+                    <button class="btn-sm btn-sm-edit" onclick="openEditUserModal('${u.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Edit</button>
+                    <button class="btn-sm btn-sm-del" onclick="deleteUser('${u.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
                 </div>
             </td>
         </tr>
@@ -384,18 +453,26 @@ function toggleUserStatus(id) {
     if (u) {
         u.status = u.status === 'active' ? 'suspended' : 'active';
         saveUsers(users);
-        renderAdminUsers();
+        renderAdminTechnicians();
+        renderAdminSupervisors();
+        renderAdminManagers();
         showToast(`User ${u.id} status changed to ${u.status}`, 'info');
     }
 }
 
-function openAddUserModal() {
-    document.getElementById('user-modal-title').textContent = 'Add New User';
+function openAddUserModal(targetRole = 'technician') {
+    const roleTitleMap = {
+        'technician': 'Add Technician',
+        'supervisor': 'Add Supervisor',
+        'manager': 'Add Manager',
+        'admin': 'Add Administrator'
+    };
+    document.getElementById('user-modal-title').textContent = roleTitleMap[targetRole] || 'Add New User';
     document.getElementById('user-modal-orig-id').value = '';
     document.getElementById('user-modal-id').value = '';
     document.getElementById('user-modal-id').disabled = false;
     document.getElementById('user-modal-name').value = '';
-    document.getElementById('user-modal-role').value = 'technician';
+    document.getElementById('user-modal-role').value = targetRole;
     document.getElementById('user-modal-title-inp').value = '';
     document.getElementById('user-modal-password').value = 'pass123';
     document.getElementById('user-modal-overlay').style.display = 'flex';
@@ -405,7 +482,7 @@ function openEditUserModal(id) {
     const users = getUsers();
     const u = users.find(x => x.id === id);
     if (!u) return;
-    document.getElementById('user-modal-title').textContent = 'Edit User Profile';
+    document.getElementById('user-modal-title').textContent = `Edit ${u.role.charAt(0).toUpperCase() + u.role.slice(1)}`;
     document.getElementById('user-modal-orig-id').value = u.id;
     document.getElementById('user-modal-id').value = u.id;
     document.getElementById('user-modal-id').disabled = true;
@@ -449,7 +526,10 @@ function handleSaveUserModal() {
 
     saveUsers(users);
     closeUserModal();
-    renderAdminUsers();
+    renderAdminTechnicians();
+    renderAdminSupervisors();
+    renderAdminManagers();
+    document.getElementById('adm-stat-users').textContent = getUsers().length;
 }
 
 function deleteUser(id) {
@@ -457,10 +537,121 @@ function deleteUser(id) {
     let users = getUsers();
     users = users.filter(u => u.id !== id);
     saveUsers(users);
-    renderAdminUsers();
+    renderAdminTechnicians();
+    renderAdminSupervisors();
+    renderAdminManagers();
+    document.getElementById('adm-stat-users').textContent = getUsers().length;
     showToast(`User ${id} removed`, 'info');
 }
 
+// ─── ADMIN LOCATIONS CRUD ───
+function renderAdminLocations() {
+    const tbody = document.getElementById('adm-locations-tbody');
+    if (!tbody) return;
+    const locs = getLocations();
+    const meters = getMeters();
+    const search = (document.getElementById('adm-search-locations')?.value || '').toLowerCase();
+
+    const filtered = locs.filter(l => l.id.toLowerCase().includes(search) || l.name.toLowerCase().includes(search) || (l.zone || '').toLowerCase().includes(search) || (l.description || '').toLowerCase().includes(search));
+    document.getElementById('adm-locations-count').textContent = filtered.length;
+
+    tbody.innerHTML = filtered.map(l => {
+        const count = meters.filter(m => m.location === l.name).length;
+        return `
+            <tr>
+                <td><strong>${l.id}</strong></td>
+                <td><strong>${l.name}</strong></td>
+                <td><span class="consumption-tag">${l.zone || 'Central Utility'}</span></td>
+                <td>${l.description || 'Park equipment and power enclosure'}</td>
+                <td><span class="badge badge-pending" style="background:rgba(34,211,238,0.15);color:#22d3ee">${count} Meters</span></td>
+                <td>
+                    <div class="action-btns">
+                        <button class="btn-sm btn-sm-edit" onclick="openEditLocationModal('${l.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Edit</button>
+                        <button class="btn-sm btn-sm-del" onclick="deleteLocation('${l.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function openAddLocationModal() {
+    document.getElementById('location-modal-title').textContent = 'Add Park Location';
+    document.getElementById('location-modal-orig-id').value = '';
+    document.getElementById('location-modal-id').value = '';
+    document.getElementById('location-modal-id').disabled = false;
+    document.getElementById('location-modal-name').value = '';
+    document.getElementById('location-modal-zone').value = 'Central Utility';
+    document.getElementById('location-modal-desc').value = '';
+    document.getElementById('location-modal-overlay').style.display = 'flex';
+}
+
+function openEditLocationModal(id) {
+    const locs = getLocations();
+    const l = locs.find(x => x.id === id);
+    if (!l) return;
+    document.getElementById('location-modal-title').textContent = 'Edit Park Location';
+    document.getElementById('location-modal-orig-id').value = l.id;
+    document.getElementById('location-modal-id').value = l.id;
+    document.getElementById('location-modal-id').disabled = true;
+    document.getElementById('location-modal-name').value = l.name;
+    document.getElementById('location-modal-zone').value = l.zone || 'Central Utility';
+    document.getElementById('location-modal-desc').value = l.description || '';
+    document.getElementById('location-modal-overlay').style.display = 'flex';
+}
+
+function closeLocationModal() { document.getElementById('location-modal-overlay').style.display = 'none'; }
+
+function handleSaveLocationModal() {
+    const origId = document.getElementById('location-modal-orig-id').value;
+    const id = document.getElementById('location-modal-id').value.trim().toUpperCase();
+    const name = document.getElementById('location-modal-name').value.trim();
+    const zone = document.getElementById('location-modal-zone').value;
+    const description = document.getElementById('location-modal-desc').value.trim();
+
+    if (!id || !name) {
+        showToast('Please enter both Location ID and Name', 'error');
+        return;
+    }
+
+    const locs = getLocations();
+    if (origId) {
+        const idx = locs.findIndex(l => l.id === origId);
+        if (idx !== -1) {
+            const oldName = locs[idx].name;
+            locs[idx] = { ...locs[idx], name, zone, description };
+            // Update linked meters location name if changed
+            if (oldName !== name) {
+                const meters = getMeters().map(m => m.location === oldName ? { ...m, location: name, zone } : m);
+                saveMeters(meters);
+                renderAdminMeters();
+            }
+            showToast(`Location ${origId} updated`, 'success');
+        }
+    } else {
+        if (locs.some(l => l.id === id)) {
+            showToast('Location ID already exists!', 'error');
+            return;
+        }
+        locs.push({ id, name, zone, description, metersCount: 0 });
+        showToast(`Location ${id} created`, 'success');
+    }
+
+    saveLocations(locs);
+    closeLocationModal();
+    renderAdminLocations();
+}
+
+function deleteLocation(id) {
+    if (!confirm(`Are you sure you want to delete location ${id}?`)) return;
+    let locs = getLocations();
+    locs = locs.filter(l => l.id !== id);
+    saveLocations(locs);
+    renderAdminLocations();
+    showToast(`Location ${id} removed`, 'info');
+}
+
+// ─── ADMIN METERS CRUD ───
 function renderAdminMeters() {
     const tbody = document.getElementById('adm-meters-tbody');
     if (!tbody) return;
@@ -476,7 +667,7 @@ function renderAdminMeters() {
             <td><span class="meter-icon ${m.iconColor}" style="width:34px;height:34px;font-size:1.1rem">${m.icon}</span></td>
             <td><strong>${m.name}</strong></td>
             <td>${m.location}</td>
-            <td><span class="consumption-tag">${m.zone || 'Central'}</span></td>
+            <td><span class="consumption-tag">${m.zone || 'Central Utility'}</span></td>
             <td><span class="badge ${m.status === 'active' ? 'badge-approved' : 'badge-pending'}">${m.status.toUpperCase()}</span></td>
             <td>
                 <div class="action-btns">
@@ -488,14 +679,22 @@ function renderAdminMeters() {
     `).join('');
 }
 
+function populateLocationDropdown(selectedLoc = '') {
+    const select = document.getElementById('edit-meter-location');
+    if (!select) return;
+    const locs = getLocations();
+    select.innerHTML = '<option value="">— Select Location —</option>' + 
+        locs.map(l => `<option value="${l.name}" ${l.name === selectedLoc ? 'selected' : ''}>${l.name} (${l.zone})</option>`).join('');
+}
+
 function openAddMeterModal() {
     document.getElementById('meter-modal-title').textContent = 'Add Meter Location';
     document.getElementById('edit-meter-id-orig').value = '';
     document.getElementById('edit-meter-id').value = '';
     document.getElementById('edit-meter-id').disabled = false;
     document.getElementById('edit-meter-name').value = '';
-    document.getElementById('edit-meter-location').value = '';
-    document.getElementById('edit-meter-zone').value = '';
+    populateLocationDropdown();
+    document.getElementById('edit-meter-zone').value = 'Central Utility';
     document.getElementById('edit-meter-overlay').style.display = 'flex';
 }
 
@@ -508,7 +707,7 @@ function openAdminEditMeter(id) {
     document.getElementById('edit-meter-id').value = m.id;
     document.getElementById('edit-meter-id').disabled = true;
     document.getElementById('edit-meter-name').value = m.name;
-    document.getElementById('edit-meter-location').value = m.location;
+    populateLocationDropdown(m.location);
     document.getElementById('edit-meter-zone').value = m.zone || 'Central Utility';
     document.getElementById('edit-meter-overlay').style.display = 'flex';
 }
@@ -517,11 +716,11 @@ function handleSaveMeterModal() {
     const origId = document.getElementById('edit-meter-id-orig').value;
     const id = document.getElementById('edit-meter-id').value.trim().toUpperCase();
     const name = document.getElementById('edit-meter-name').value.trim();
-    const location = document.getElementById('edit-meter-location').value.trim();
+    const location = document.getElementById('edit-meter-location').value;
     const zone = document.getElementById('edit-meter-zone').value.trim() || 'Central Utility';
 
-    if (!id || !name) {
-        showToast('Please enter both Meter ID and Name', 'error');
+    if (!id || !name || !location) {
+        showToast('Please enter Meter ID, Name, and Select a Location', 'error');
         return;
     }
 
@@ -545,6 +744,7 @@ function handleSaveMeterModal() {
     document.getElementById('edit-meter-overlay').style.display = 'none';
     renderAdminMeters();
     renderTechMeters();
+    document.getElementById('adm-stat-meters').textContent = getMeters().length;
 }
 
 function deleteMeter(id) {
@@ -553,8 +753,11 @@ function deleteMeter(id) {
     meters = meters.filter(m => m.id !== id);
     saveMeters(meters);
     renderAdminMeters();
+    renderTechMeters();
+    document.getElementById('adm-stat-meters').textContent = getMeters().length;
     showToast(`Meter ${id} removed`, 'info');
 }
+
 
 function renderAdminSystemTable() {
     const tbody = document.getElementById('adm-system-tbody');
