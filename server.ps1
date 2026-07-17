@@ -61,8 +61,13 @@ while ($listener.IsListening) {
 
         $urlPath = $request.Url.LocalPath
         if ($urlPath -eq '/') { $urlPath = '/index.html' }
+        if ($urlPath -eq '/technician' -or $urlPath -eq '/technician/') { $urlPath = '/technician.html' }
 
         $filePath = Join-Path $root ($urlPath.TrimStart('/').Replace('/', '\'))
+        if (-not (Test-Path $filePath -PathType Leaf) -and (Test-Path ($filePath + '.html') -PathType Leaf)) {
+            $filePath = $filePath + '.html'
+            $urlPath = $urlPath + '.html'
+        }
 
         if (Test-Path $filePath -PathType Leaf) {
             $ext = [System.IO.Path]::GetExtension($filePath).ToLower()

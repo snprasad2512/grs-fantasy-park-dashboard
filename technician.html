@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GRS Fantasy Park — Technician Portal (/technician)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="index.css">
+    <style>
+        /* Standalone Technician Portal Styles */
+        body {
+            background-color: var(--bg-dark, #0a0e1a);
+            color: var(--text-primary, #f0f4ff);
+            font-family: 'Outfit', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            margin: 0;
+            padding: 0;
+        }
+        .portal-header {
+            background: rgba(17, 24, 39, 0.9);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 1rem 1.5rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .portal-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .portal-logo-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #a855f7, #22d3ee);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
+        }
+        .portal-title h1 {
+            font-size: 1.25rem;
+            font-weight: 800;
+            margin: 0;
+            background: linear-gradient(135deg, #fff, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .portal-title p {
+            font-size: 0.82rem;
+            color: var(--text-secondary, #8b95b0);
+            margin: 2px 0 0;
+            font-weight: 500;
+        }
+        .portal-user-info {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .portal-tech-badge {
+            background: rgba(34, 211, 238, 0.15);
+            color: #22d3ee;
+            border: 1px solid rgba(34, 211, 238, 0.3);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .portal-main {
+            flex: 1;
+            max-width: 960px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 1.5rem;
+            box-sizing: border-box;
+        }
+        .portal-login-container {
+            max-width: 420px;
+            margin: 4rem auto;
+            background: var(--bg-surface, #111827);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 2.5rem 2rem;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+        .portal-card {
+            background: var(--bg-surface, #111827);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+        }
+        .portal-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.25rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .portal-card-header h2 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .location-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 1rem;
+        }
+        .loc-pill {
+            background: var(--bg-card, #1a2235);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding: 10px 16px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.92rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .loc-pill:hover {
+            border-color: #a855f7;
+            background: rgba(168, 85, 247, 0.1);
+            transform: translateY(-2px);
+        }
+        .loc-pill.active {
+            background: linear-gradient(135deg, #a855f7, #6366f1);
+            border-color: transparent;
+            box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
+        }
+        .meters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+            margin-top: 1rem;
+        }
+        .meter-portal-card {
+            background: var(--bg-card, #1a2235);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 1.25rem;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .meter-portal-card:hover {
+            border-color: #22d3ee;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+        .meter-portal-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .meter-portal-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: rgba(168, 85, 247, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+        .meter-portal-btns {
+            display: flex;
+            gap: 10px;
+            margin-top: auto;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .btn-portal-capture, .btn-portal-upload {
+            flex: 1;
+            padding: 11px 14px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+        }
+        .btn-portal-capture {
+            background: linear-gradient(135deg, #a855f7, #6366f1);
+            color: #fff;
+        }
+        .btn-portal-upload {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+        .btn-portal-capture:hover, .btn-portal-upload:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);
+        }
+        .ocr-portal-box {
+            background: var(--bg-card, #1a2235);
+            border: 2px dashed rgba(34, 211, 238, 0.4);
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-align: center;
+            margin-top: 1rem;
+        }
+        .input-portal {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 12px 16px;
+            border-radius: 10px;
+            width: 100%;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+        .input-portal:focus {
+            outline: none;
+            border-color: #a855f7;
+            box-shadow: 0 0 10px rgba(168, 85, 247, 0.3);
+        }
+        .portal-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        .portal-table th, .portal-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            font-size: 0.9rem;
+        }
+        .portal-table th {
+            color: var(--text-secondary, #8b95b0);
+            font-weight: 600;
+        }
+        .confirmation-modal {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .confirmation-card {
+            background: var(--bg-surface, #111827);
+            border: 1px solid rgba(34, 211, 238, 0.4);
+            border-radius: 20px;
+            max-width: 460px;
+            width: 100%;
+            padding: 2.5rem 2rem;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+            animation: slideUp 0.3s ease;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ═══════════════════ TECHNICIAN PORTAL LOGIN SCREEN ═══════════════════ -->
+    <div id="tech-portal-login" class="portal-login-container">
+        <div style="width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg, #a855f7, #22d3ee);display:flex;align-items:center;justify-content:center;font-size:2.2rem;margin:0 auto 1.5rem;box-shadow:0 0 25px rgba(168,85,247,0.5)">⚡</div>
+        <h2 style="font-size:1.6rem;font-weight:800;margin:0 0 8px;color:#fff">Technician Portal</h2>
+        <p style="color:var(--text-secondary);font-size:0.92rem;margin:0 0 2rem">Authorized Field Maintenance Access (/technician)</p>
+        
+        <form id="tech-login-form" onsubmit="event.preventDefault(); handleTechPortalLogin();">
+            <div style="margin-bottom:1.25rem;text-align:left">
+                <label style="display:block;font-size:0.85rem;font-weight:600;color:var(--text-secondary);margin-bottom:6px">Technician ID</label>
+                <input type="text" id="tech-login-id" class="input-portal" placeholder="e.g. TECH-001" required>
+            </div>
+            <div style="margin-bottom:1.5rem;text-align:left">
+                <label style="display:block;font-size:0.85rem;font-weight:600;color:var(--text-secondary);margin-bottom:6px">Password</label>
+                <input type="password" id="tech-login-pass" class="input-portal" placeholder="••••••••" required>
+            </div>
+            <div id="tech-login-error" style="color:#ef4444;font-size:0.88rem;margin-bottom:1.25rem;display:none;background:rgba(239,68,68,0.1);padding:10px;border-radius:8px;border:1px solid rgba(239,68,68,0.3)"></div>
+            <button type="submit" class="btn-primary" style="width:100%;padding:14px;border-radius:12px;font-weight:700;font-size:1.05rem;background:linear-gradient(135deg, #a855f7, #22d3ee);color:#fff;border:none;cursor:pointer">
+                Sign In to Technician Portal
+            </button>
+        </form>
+        <div style="margin-top:1.75rem;padding-top:1.25rem;border-top:1px solid rgba(255,255,255,0.06);font-size:0.82rem;color:var(--text-muted)">
+            🔒 Strictly for Technicians. Admin/Manager/Supervisor personnel must use the <a href="/index.html" style="color:#22d3ee;text-decoration:none;font-weight:600">Main Portal</a>.
+        </div>
+    </div>
+
+    <!-- ═══════════════════ TECHNICIAN PORTAL DASHBOARD SCREEN ═══════════════════ -->
+    <div id="tech-portal-dashboard" style="display:none;flex-direction:column;flex:1">
+        <header class="portal-header">
+            <div class="portal-brand">
+                <div class="portal-logo-icon">⚡</div>
+                <div class="portal-title">
+                    <h1>GRS Fantasy Park</h1>
+                    <p>Technician Field Maintenance Portal (/technician)</p>
+                </div>
+            </div>
+            <div class="portal-user-info">
+                <div class="portal-tech-badge">
+                    <span>🔧 Assigned Technician:</span>
+                    <strong id="header-tech-name">—</strong>
+                </div>
+                <button onclick="handleTechPortalLogout()" class="btn-secondary" style="padding:8px 14px;border-radius:8px;font-size:0.85rem;display:flex;align-items:center;gap:6px;background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.3);cursor:pointer;font-weight:600">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                    Logout
+                </button>
+            </div>
+        </header>
+
+        <main class="portal-main">
+            <!-- Step 1: Assigned Locations Card -->
+            <div class="portal-card">
+                <div class="portal-card-header">
+                    <h2>📍 Step 1: Select Your Assigned Park Location</h2>
+                    <span id="assigned-loc-count" style="font-size:0.85rem;color:#22d3ee;font-weight:700;background:rgba(34,211,238,0.1);padding:4px 10px;border-radius:12px">0 Assigned</span>
+                </div>
+                <p style="font-size:0.9rem;color:var(--text-secondary);margin:0">Displaying only the locations assigned to your technician profile. Click a location below to view assigned energy meters:</p>
+                
+                <div id="portal-locations-list" class="location-pills">
+                    <!-- Dynamic Location Pills -->
+                </div>
+            </div>
+
+            <!-- Step 2: Assigned Energy Meters Grid -->
+            <div id="portal-meters-section" class="portal-card" style="display:none">
+                <div class="portal-card-header">
+                    <h2>⚡ Step 2: Energy Meters at <span id="active-location-name" style="color:#a855f7">—</span></h2>
+                    <span id="assigned-meter-count" style="font-size:0.85rem;color:#a855f7;font-weight:700;background:rgba(168,85,247,0.15);padding:4px 10px;border-radius:12px">0 Meters</span>
+                </div>
+                <p style="font-size:0.9rem;color:var(--text-secondary);margin:0">Displaying only the energy meters assigned to this location. Use the buttons below to capture via device camera or upload from gallery:</p>
+                
+                <div id="portal-meters-grid" class="meters-grid">
+                    <!-- Dynamic Meter Cards -->
+                </div>
+            </div>
+
+            <!-- Step 3: Photo Capture & AI OCR Processing Box -->
+            <div id="portal-capture-section" class="portal-card" style="display:none">
+                <div class="portal-card-header">
+                    <h2>📸 Step 3: AI OCR & Meter Reading Submission</h2>
+                    <button onclick="closePortalCaptureSection()" class="btn-secondary" style="padding:6px 12px;border-radius:8px;font-size:0.82rem;cursor:pointer;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);color:#fff">Cancel / Close</button>
+                </div>
+
+                <div style="display:flex;align-items:center;gap:14px;padding:12px;background:rgba(255,255,255,0.03);border-radius:12px;margin-bottom:1.5rem;border:1px solid rgba(255,255,255,0.06)">
+                    <div id="capture-meter-icon" style="font-size:2rem;width:56px;height:56px;border-radius:12px;background:rgba(168,85,247,0.15);display:flex;align-items:center;justify-content:center">⚡</div>
+                    <div>
+                        <div id="capture-meter-name" style="font-weight:800;font-size:1.15rem;color:#fff">—</div>
+                        <div id="capture-meter-loc" style="font-size:0.88rem;color:var(--text-secondary)">📍 —</div>
+                        <div style="font-size:0.82rem;color:var(--text-muted);margin-top:2px">Previous Baseline: <strong id="capture-meter-prev" style="color:#fff">0.00 kWh</strong></div>
+                    </div>
+                </div>
+
+                <!-- Camera Stream Area -->
+                <div id="portal-viewfinder" style="display:none;margin-bottom:1.5rem;border-radius:16px;overflow:hidden;background:#000;position:relative;border:2px solid #a855f7">
+                    <video id="portal-camera-video" autoplay playsinline style="width:100%;max-height:420px;object-fit:cover"></video>
+                    <canvas id="portal-camera-canvas" style="display:none"></canvas>
+                    <div style="position:absolute;bottom:16px;left:0;right:0;display:flex;justify-content:center;gap:16px;z-index:10">
+                        <button onclick="snapPortalPhoto()" class="btn-primary" style="padding:14px 28px;border-radius:50px;font-weight:800;font-size:1rem;background:linear-gradient(135deg, #a855f7, #22d3ee);color:#fff;border:none;cursor:pointer;box-shadow:0 6px 25px rgba(168,85,247,0.6)">
+                            📸 Take Picture Now
+                        </button>
+                        <button onclick="stopPortalCamera()" class="btn-secondary" style="padding:14px 20px;border-radius:50px;font-weight:700;font-size:0.92rem;background:rgba(0,0,0,0.7);color:#fff;border:1px solid rgba(255,255,255,0.3);cursor:pointer">
+                            Cancel Camera
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Hidden File Input -->
+                <input type="file" id="portal-file-input" accept="image/*" style="display:none" onchange="handlePortalFileUpload(event)">
+
+                <!-- Image Preview Area -->
+                <div id="portal-preview-area" style="display:none;text-align:center;margin-bottom:1.5rem">
+                    <div style="font-size:0.88rem;font-weight:700;color:var(--text-secondary);margin-bottom:8px">Selected / Captured Meter Photo:</div>
+                    <img id="portal-photo-preview" src="" alt="Meter Display" style="max-height:300px;border-radius:14px;border:2px solid #22d3ee;box-shadow:0 10px 30px rgba(0,0,0,0.5)">
+                    <div style="margin-top:12px">
+                        <button onclick="retakePortalPhoto()" class="btn-secondary" style="padding:8px 16px;border-radius:8px;font-size:0.85rem;cursor:pointer;background:rgba(255,255,255,0.06);color:#fff;border:1px solid rgba(255,255,255,0.2)">
+                            🔄 Retake / Select Another Photo
+                        </button>
+                    </div>
+                </div>
+
+                <!-- AI OCR Spinner Overlay inside box -->
+                <div id="portal-ocr-loading" class="ocr-portal-box" style="display:none">
+                    <div style="width:48px;height:48px;border:4px solid rgba(168,85,247,0.2);border-top-color:#a855f7;border-radius:50%;margin:0 auto 12px;animation:portalSpin 1s linear infinite"></div>
+                    <h3 style="margin:0 0 6px;color:#fff">AI OCR Detecting Meter Value...</h3>
+                    <p id="portal-ocr-status" style="font-size:0.88rem;color:var(--text-secondary);margin:0 0 12px">Scanning digital LCD display digits...</p>
+                    <div style="background:rgba(255,255,255,0.1);border-radius:10px;height:8px;width:100%;overflow:hidden">
+                        <div id="portal-ocr-bar" style="background:linear-gradient(90deg, #a855f7, #22d3ee);height:100%;width:0%;transition:width 0.3s ease"></div>
+                    </div>
+                </div>
+                <style>@keyframes portalSpin { to { transform: rotate(360deg); } }</style>
+
+                <!-- Extracted Reading & Manual Correction Form -->
+                <div id="portal-reading-form" style="display:none;margin-top:1.5rem;background:rgba(255,255,255,0.02);padding:1.5rem;border-radius:14px;border:1px solid rgba(255,255,255,0.08)">
+                    <h3 style="margin:0 0 1rem;font-size:1.1rem;color:#22d3ee">4. Detected Reading & Manual Correction</h3>
+                    
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:16px;margin-bottom:1.5rem">
+                        <div>
+                            <label style="display:block;font-size:0.85rem;font-weight:600;color:var(--text-secondary);margin-bottom:6px">AI Detected / Corrected Reading (kWh)</label>
+                            <input type="number" step="0.01" id="tech-portal-reading-val" class="input-portal" style="font-size:1.3rem;font-weight:800;color:#fff;border-color:#22d3ee" oninput="updatePortalConsumption()">
+                        </div>
+                        <div>
+                            <label style="display:block;font-size:0.85rem;font-weight:600;color:var(--text-secondary);margin-bottom:6px">Calculated Net Consumption</label>
+                            <div id="tech-portal-consumption" style="font-size:1.3rem;font-weight:800;color:#22d3ee;background:rgba(34,211,238,0.1);padding:12px 16px;border-radius:10px;border:1px solid rgba(34,211,238,0.3)">▲ 0.00 kWh</div>
+                        </div>
+                    </div>
+
+                    <div style="background:rgba(168,85,247,0.1);border-left:4px solid #a855f7;padding:12px 16px;border-radius:8px;margin-bottom:1.5rem;font-size:0.88rem">
+                        <strong>📌 Submission Details to be Saved:</strong><br>
+                        Technician: <span id="save-tech-name" style="color:#fff;font-weight:600">—</span> | Location: <span id="save-loc-name" style="color:#fff;font-weight:600">—</span><br>
+                        Date: <span id="save-date" style="color:#fff;font-weight:600">—</span> | Time: <span id="save-time" style="color:#fff;font-weight:600">—</span> | Status: <span style="color:#fbbf24;font-weight:700">PENDING SUPERVISOR REVIEW</span>
+                    </div>
+
+                    <button onclick="submitPortalReading()" id="btn-portal-submit" class="btn-primary" style="width:100%;padding:16px;border-radius:12px;font-size:1.15rem;font-weight:800;background:linear-gradient(135deg, #22c55e, #10b981);color:#fff;border:none;cursor:pointer;box-shadow:0 8px 30px rgba(34,197,94,0.4)">
+                        ✔ Confirm & Submit Reading
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 4: Technician Submission History Table -->
+            <div class="portal-card">
+                <div class="portal-card-header">
+                    <h2>📋 My Submission History (`/technician`)</h2>
+                    <button onclick="renderPortalHistory()" class="btn-secondary" style="padding:6px 12px;border-radius:8px;font-size:0.82rem;cursor:pointer;background:rgba(255,255,255,0.06);color:#fff;border:1px solid rgba(255,255,255,0.2)">🔄 Refresh</button>
+                </div>
+                <div style="overflow-x:auto">
+                    <table class="portal-table">
+                        <thead>
+                            <tr>
+                                <th>Date & Time</th>
+                                <th>Location</th>
+                                <th>Energy Meter</th>
+                                <th>Reading</th>
+                                <th>Consumption</th>
+                                <th>Photo</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="portal-history-tbody">
+                            <tr><td colspan="7" style="text-align:center;color:var(--text-muted)">Loading your submission history...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ═══════════════════ SUCCESS CONFIRMATION MODAL ═══════════════════ -->
+    <div id="portal-success-modal" class="confirmation-modal">
+        <div class="confirmation-card">
+            <div style="width:72px;height:72px;border-radius:50%;background:rgba(34,197,94,0.15);color:#22c55e;display:flex;align-items:center;justify-content:center;font-size:2.5rem;margin:0 auto 1.5rem;border:2px solid #22c55e">✔</div>
+            <h2 style="font-size:1.5rem;font-weight:800;margin:0 0 10px;color:#fff">Submission Confirmed!</h2>
+            <p id="portal-success-message" style="color:var(--text-secondary);font-size:0.95rem;line-height:1.6;margin:0 0 2rem">
+                Your energy meter reading has been successfully saved with date, time, location, technician details, and uploaded photo. Status set to Pending Supervisor Review.
+            </p>
+            <button onclick="closePortalSuccessModal()" class="btn-primary" style="width:100%;padding:14px;border-radius:12px;font-size:1.05rem;font-weight:700;background:linear-gradient(135deg, #a855f7, #22d3ee);color:#fff;border:none;cursor:pointer">
+                Return to Assigned Meters
+            </button>
+        </div>
+    </div>
+
+    <script src="technician.js"></script>
+</body>
+</html>
