@@ -69,6 +69,7 @@ let currentRoleTab = 'technician';
 let cameraStream = null;
 let capturedImageData = null;
 let selectedCaptureMeterId = null;
+let selectedCaptureLocation = '';
 let activeAdminModule = 'technicians';
 let activeManagerPeriod = 'daily';
 let activeSupervisorPeriod = 'daily';
@@ -252,6 +253,12 @@ function setupEventListeners() {
 
     // Technician Navigation & Capture Module
     document.getElementById('meter-search')?.addEventListener('input', renderTechMeters);
+    document.getElementById('tech-filter-location')?.addEventListener('change', renderTechMeters);
+    document.getElementById('tech-filter-zone')?.addEventListener('change', renderTechMeters);
+    document.getElementById('capture-location-select')?.addEventListener('change', function() {
+        selectedCaptureLocation = this.value;
+        populateCaptureMeterDropdown(selectedCaptureLocation);
+    });
     document.getElementById('btn-quick-capture')?.addEventListener('click', openCaptureScreen);
     document.getElementById('nav-capture-btn')?.addEventListener('click', openCaptureScreen);
     document.getElementById('capture-back')?.addEventListener('click', () => { stopCamera(); showScreen('tech-dashboard'); });
@@ -1203,19 +1210,48 @@ function renderTechDashboard() {
     document.getElementById('tech-stat-pending').textContent = myReadings.filter(r => r.status === 'pending' || r.status === 'verified_by_sup').length;
     document.getElementById('tech-stat-confirmed').textContent = myReadings.filter(r => r.status === 'approved').length;
 
+    populateTechLocationFilters();
     renderTechMeters();
     renderTechHistory();
-    populateCaptureMeterDropdown();
+    populateCaptureMeterDropdown(selectedCaptureLocation || '');
 }
 
-function populateCaptureMeterDropdown() {
+function populateTechLocationFilters() {
+    const locSelect = document.getElementById('tech-filter-location');
+    const zoneSelect = document.getElementById('tech-filter-zone');
+    const capLocSelect = document.getElementById('capture-location-select');
+    const locs = getLocations();
+    const zones = [...new Set(locs.map(l => l.zone || 'Central Utility'))];
+
+    if (locSelect && locSelect.options.length <= 1) {
+        const curr = locSelect.value;
+        locSelect.innerHTML = '<option value="all">All Park Locations</option>' + 
+            locs.map(l => `<option value="${l.name}" ${l.name === curr ? 'selected' : ''}>${l.name}</option>`).join('');
+    }
+    if (zoneSelect && zoneSelect.options.length <= 1) {
+        const currZ = zoneSelect.value;
+        zoneSelect.innerHTML = '<option value="all">All Park Zones</option>' + 
+            zones.map(z => `<option value="${z}" ${z === currZ ? 'selected' : ''}>${z}</option>`).join('');
+    }
+    if (capLocSelect) {
+        const currCap = capLocSelect.value || selectedCaptureLocation;
+        capLocSelect.innerHTML = '<option value="">— All Park Locations —</option>' + 
+            locs.map(l => `<option value="${l.name}" ${l.name === currCap ? 'selected' : ''}>${l.name} (${l.zone || 'Central Utility'})</option>`).join('');
+    }
+}
+
+function populateCaptureMeterDropdown(locFilter = '') {
     const select = document.getElementById('capture-meter-select');
     if (!select) return;
-    select.innerHTML = '<option value="">— Choose a meter location —</option>';
-    getMeters().forEach(m => {
+    const currentVal = select.value || selectedCaptureMeterId;
+    select.innerHTML = '<option value="">— Choose a meter —</option>';
+    
+    const meters = getMeters().filter(m => !locFilter || m.location === locFilter);
+    meters.forEach(m => {
         const opt = document.createElement('option');
         opt.value = m.id;
-        opt.textContent = `${m.id} — ${m.name} (${m.zone || 'Central Utility'})`;
+        opt.textContent = `${m.id} — ${m.name} (${m.location})`;
+        if (m.id === currentVal) opt.selected = true;
         select.appendChild(opt);
     });
 }
@@ -1225,21 +1261,32 @@ function renderTechMeters() {
     if (!grid) return;
     const meters = getMeters();
     const search = (document.getElementById('meter-search')?.value || '').toLowerCase();
+    const locFilter = document.getElementById('tech-filter-location')?.value || 'all';
+    const zoneFilter = document.getElementById('tech-filter-zone')?.value || 'all';
 
-    const filtered = meters.filter(m => m.id.toLowerCase().includes(search) || m.name.toLowerCase().includes(search) || m.location.toLowerCase().includes(search) || (m.zone || '').toLowerCase().includes(search));
+    const filtered = meters.filter(m => {
+        const matchSearch = m.id.toLowerCase().includes(search) || m.name.toLowerCase().includes(search) || m.location.toLowerCase().includes(search) || (m.zone || '').toLowerCase().includes(search);
+        const matchLoc = locFilter === 'all' || m.location === locFilter;
+        const matchZone = zoneFilter === 'all' || (m.zone || '') === zoneFilter;
+        return matchSearch && matchLoc && matchZone;
+    });
     document.getElementById('meter-count').textContent = `(${filtered.length})`;
+
+    if (filtered.length === 0) {
+        grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;text-align:center;padding:2rem"><p>No energy meters found for the selected location or zone.</p></div>`;
+        return;
+    }
 
     grid.innerHTML = filtered.map(m => `
         <div class="meter-card" onclick="selectAndCapture('${m.id}')">
             <div class="meter-icon ${m.iconColor}">${m.icon}</div>
             <div class="meter-info">
                 <div class="meter-name">${m.name}</div>
-                <div class="meter-location">${m.location}</div>
+                <div class="meter-location">📍 ${m.location}</div>
                 <div class="meter-last"><span class="consumption-tag">${m.zone || 'Central Utility'}</span> | Last: ${m.prevReading.toFixed(2)} kWh</div>
             </div>
             <div class="meter-actions" onclick="e => e.stopPropagation()">
-                <button class="meter-edit-btn" title="Edit Meter Metadata" onclick="openTechEditMeter(event, '${m.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></button>
-                <div class="meter-status ${m.status}"></div>
+                <div class="meter-status ${m.status}" title="Status: ${m.status}"></div>
             </div>
         </div>
     `).join('');
@@ -1252,6 +1299,13 @@ function openTechEditMeter(e, meterId) {
 
 function selectAndCapture(meterId) {
     selectedCaptureMeterId = meterId;
+    const m = getMeters().find(x => x.id === meterId);
+    if (m) {
+        selectedCaptureLocation = m.location;
+        const capLocSelect = document.getElementById('capture-location-select');
+        if (capLocSelect) capLocSelect.value = m.location;
+        populateCaptureMeterDropdown(m.location);
+    }
     const select = document.getElementById('capture-meter-select');
     if (select) select.value = meterId;
     updateSelectedMeterCard();
@@ -1275,6 +1329,16 @@ function updateSelectedMeterCard() {
 }
 
 function openCaptureScreen() {
+    populateTechLocationFilters();
+    const capLocSelect = document.getElementById('capture-location-select');
+    if (capLocSelect && selectedCaptureLocation) {
+        capLocSelect.value = selectedCaptureLocation;
+    }
+    populateCaptureMeterDropdown(selectedCaptureLocation || '');
+    if (selectedCaptureMeterId) {
+        const sel = document.getElementById('capture-meter-select');
+        if (sel) sel.value = selectedCaptureMeterId;
+    }
     updateSelectedMeterCard();
     showScreen('capture-screen');
 }

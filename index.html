@@ -418,6 +418,10 @@
             <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             <input type="text" id="meter-search" class="search-input" placeholder="Search meters by name, location, or zone...">
         </div>
+        <div class="filter-bar" style="margin-top:0.75rem;margin-bottom:1.25rem">
+            <div class="filter-group" style="flex:1"><label>Assigned Location Filter</label><select id="tech-filter-location" class="filter-select"><option value="all">All Park Locations</option></select></div>
+            <div class="filter-group" style="flex:1"><label>Assigned Zone Filter</label><select id="tech-filter-zone" class="filter-select"><option value="all">All Park Zones</option></select></div>
+        </div>
         <div class="meter-grid" id="meter-grid"></div>
 
         <!-- Recent Submissions History -->
@@ -442,9 +446,18 @@
         <div style="width:40px"></div>
     </header>
     <main class="main-content">
-        <!-- Meter Dropdown Selector -->
+        <!-- Step 1: Assigned Location Dropdown Selector -->
         <div class="form-group">
-            <label for="capture-meter-select">Select Energy Meter Name</label>
+            <label for="capture-location-select">1. Select Assigned Location</label>
+            <div class="select-wrapper">
+                <select id="capture-location-select" class="styled-select">
+                    <option value="">— All Park Locations —</option>
+                </select>
+            </div>
+        </div>
+        <!-- Step 2: Meter Dropdown Selector -->
+        <div class="form-group">
+            <label for="capture-meter-select">2. Select Energy Meter Name</label>
             <div class="select-wrapper">
                 <select id="capture-meter-select" class="styled-select">
                     <option value="">— Choose a meter —</option>
