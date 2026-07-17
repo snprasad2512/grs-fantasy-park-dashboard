@@ -136,7 +136,23 @@ function initStorage() {
     }
 }
 
-function getUsers() { return JSON.parse(localStorage.getItem('grs_users') || '[]'); }
+function getUsers() {
+    let users = JSON.parse(localStorage.getItem('grs_users') || '[]');
+    if (!users || users.length === 0) {
+        users = [...DEFAULT_USERS];
+        localStorage.setItem('grs_users', JSON.stringify(users));
+    } else {
+        let modified = false;
+        DEFAULT_USERS.forEach(defU => {
+            if (!users.some(u => u.id.toLowerCase() === defU.id.toLowerCase())) {
+                users.push(defU);
+                modified = true;
+            }
+        });
+        if (modified) localStorage.setItem('grs_users', JSON.stringify(users));
+    }
+    return users;
+}
 function saveUsers(users) { localStorage.setItem('grs_users', JSON.stringify(users)); }
 function getMeters() { return JSON.parse(localStorage.getItem('grs_meters') || '[]'); }
 function saveMeters(meters) { localStorage.setItem('grs_meters', JSON.stringify(meters)); }
@@ -165,6 +181,9 @@ function setupEventListeners() {
             document.querySelectorAll('#role-tabs .role-tab').forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
             currentRoleTab = tab.dataset.role;
+            const placeholders = { technician: 'e.g. TECH-001', supervisor: 'e.g. SUP-001', manager: 'e.g. MGR-001', admin: 'e.g. ADM-001' };
+            const idInp = document.getElementById('login-id');
+            if (idInp && placeholders[currentRoleTab]) idInp.placeholder = placeholders[currentRoleTab];
         });
     });
 
@@ -305,11 +324,22 @@ function handleLogin(e) {
         btnText.style.display = 'inline-block';
 
         const users = getUsers();
-        const found = users.find(u => u.id.toLowerCase() === id.toLowerCase() && u.password === password && u.role === currentRoleTab);
+        let found = users.find(u => u.id.toLowerCase() === id.toLowerCase() && u.password === password && u.role === currentRoleTab);
+
+        if (!found) {
+            // Auto-fallback: if valid ID & password typed under any role, switch role and allow login seamlessly
+            found = users.find(u => u.id.toLowerCase() === id.toLowerCase() && u.password === password);
+            if (found) {
+                currentRoleTab = found.role;
+                document.querySelectorAll('#role-tabs .role-tab').forEach(t => {
+                    t.classList.toggle('active', t.dataset.role === found.role);
+                });
+            }
+        }
 
         if (!found) {
             errorDiv.style.display = 'flex';
-            document.getElementById('login-error-text').textContent = `Invalid ${currentRoleTab} ID or password (try pass123).`;
+            document.getElementById('login-error-text').textContent = `Invalid user ID or password (try e.g. ADM-001, MGR-001, SUP-001, TECH-001 with pass123).`;
             return;
         }
 
@@ -338,7 +368,13 @@ function showDashboardForRole(role) {
     } else if (role === 'supervisor') {
         renderSupervisorDashboard();
         showScreen('supervisor-dashboard');
-   // ─── 1. ADMIN DASHBOARD LOGIC ───
+    } else if (role === 'technician') {
+        renderTechDashboard();
+        showScreen('tech-dashboard');
+    }
+}
+
+// ─── 1. ADMIN DASHBOARD LOGIC ───
 function renderAdminDashboard() {
     document.getElementById('admin-greeting').textContent = `Welcome, Administrator`;
     document.getElementById('admin-name').textContent = currentUser.name;
