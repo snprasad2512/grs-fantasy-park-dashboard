@@ -1846,6 +1846,23 @@ function exportToPDF() {
     }
 }
 
+// ─── SCREEN ROUTING & NAVIGATION UTILITY ───
+function showScreen(screenId) {
+    if (screenId !== 'capture-screen' && typeof stopCamera === 'function') {
+        stopCamera();
+    }
+    document.querySelectorAll('.screen').forEach(s => {
+        if (s.id === screenId) {
+            s.classList.add('active');
+            s.style.display = 'flex';
+        } else {
+            s.classList.remove('active');
+            s.style.display = 'none';
+        }
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
 // ─── TOAST NOTIFICATIONS ───
 function showToast(message, type = 'info') {
     const container = document.getElementById('toast-container');
