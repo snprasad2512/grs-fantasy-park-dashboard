@@ -1022,13 +1022,22 @@ function renderSupervisorDashboard() {
 function renderSupervisorStats() {
     const readings = getReadings();
     const todayStr = new Date().toISOString().split('T')[0];
-    const todayReadings = readings.filter(r => r.datetime && r.datetime.startsWith(todayStr));
+    const now = new Date();
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-    document.getElementById('sup-stat-total').textContent = readings.length;
+    const todayReadings = readings.filter(r => r.datetime && r.datetime.startsWith(todayStr));
+    const weeklyReadings = readings.filter(r => {
+        const time = r.timestamp || new Date(r.datetime).getTime();
+        return time >= sevenDaysAgo.getTime() && time <= now.getTime();
+    });
+
+    const activeList = activeSupervisorPeriod === 'weekly' ? weeklyReadings : todayReadings;
+
+    document.getElementById('sup-stat-total').textContent = activeList.length;
     document.getElementById('sup-stat-today').textContent = todayReadings.length;
-    document.getElementById('sup-stat-pending').textContent = readings.filter(r => r.status === 'pending').length;
-    const todayCons = todayReadings.reduce((sum, r) => sum + (r.consumption || 0), 0);
-    document.getElementById('sup-stat-consumption').textContent = todayCons.toFixed(1);
+    document.getElementById('sup-stat-pending').textContent = activeList.filter(r => r.status === 'pending' || r.status === 'verified_by_sup').length;
+    const activeCons = activeList.reduce((sum, r) => sum + (r.consumption || 0), 0);
+    document.getElementById('sup-stat-consumption').textContent = activeCons.toFixed(1);
 }
 
 function renderSupervisorReadings() {
@@ -1042,12 +1051,21 @@ function renderSupervisorReadings() {
     const filterTech = document.getElementById('filter-tech')?.value || 'all';
     const search = (document.getElementById('sup-search')?.value || '').toLowerCase();
 
+    const todayStr = new Date().toISOString().split('T')[0];
+    const now = new Date();
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
     const filtered = readings.filter(r => {
+        const time = r.timestamp || new Date(r.datetime).getTime();
+        const matchPeriod = activeSupervisorPeriod === 'weekly' 
+            ? (time >= sevenDaysAgo.getTime() && time <= now.getTime())
+            : (r.datetime && r.datetime.startsWith(todayStr));
+
         const matchMeter = filterMeter === 'all' || r.meterId === filterMeter;
         const matchStatus = filterStatus === 'all' || r.status === filterStatus;
         const matchTech = filterTech === 'all' || r.techId === filterTech;
         const matchSearch = r.meterName.toLowerCase().includes(search) || r.techName.toLowerCase().includes(search) || r.value.toString().includes(search);
-        return matchMeter && matchStatus && matchTech && matchSearch;
+        return matchPeriod && matchMeter && matchStatus && matchTech && matchSearch;
     });
 
     if (filtered.length === 0) {
@@ -1067,8 +1085,10 @@ function renderSupervisorReadings() {
             <td><span class="badge ${r.status === 'approved' ? 'badge-approved' : (r.status === 'rejected' ? 'badge-rejected' : (r.status === 'verified_by_sup' ? 'badge-verified' : 'badge-pending'))}">${r.status === 'verified_by_sup' ? 'Verified (Sup)' : r.status.toUpperCase()}</span></td>
             <td>
                 <div class="action-btns">
-                    <button class="btn-sm btn-sm-verify" onclick="openReviewModal('${r.id}')">Verify / Photo</button>
-                    ${r.status === 'pending' ? `<button class="btn-sm btn-sm-approve" onclick="updateReadingStatus('${r.id}', 'verified_by_sup')">Verify OK</button>` : ''}
+                    <button class="btn-sm btn-sm-verify" onclick="openReviewModal('${r.id}')" title="Review Photo & Details">📸 Review</button>
+                    ${r.status === 'pending' ? `<button class="btn-sm btn-sm-verify" style="background:var(--accent-cyan);color:#000" onclick="updateReadingStatus('${r.id}', 'verified_by_sup')" title="Verify Reading OK">🔍 Verify OK</button>` : ''}
+                    ${r.status !== 'approved' ? `<button class="btn-sm btn-sm-approve" onclick="updateReadingStatus('${r.id}', 'approved')" title="Directly Approve">✔ Approve</button>` : ''}
+                    ${r.status !== 'rejected' ? `<button class="btn-sm btn-sm-reject" onclick="updateReadingStatus('${r.id}', 'rejected')" title="Reject & Request Retake">✖ Reject</button>` : ''}
                 </div>
             </td>
         </tr>
