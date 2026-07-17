@@ -938,8 +938,9 @@ function renderManagerSubmissions() {
 
     const filtered = readings.filter(r => {
         const time = r.timestamp || new Date(r.datetime).getTime();
+        const isRecent = time >= (now.getTime() - 24 * 60 * 60 * 1000);
         const matchPeriod = activeManagerPeriod === 'daily' 
-            ? (r.datetime && r.datetime.startsWith(todayStr))
+            ? (isRecent || (r.datetime && (r.datetime.startsWith(todayStr) || r.datetime.includes(now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })))))
             : (activeManagerPeriod === 'weekly' 
                 ? (time >= sevenDaysAgo.getTime() && time <= now.getTime())
                 : (activeManagerPeriod === 'monthly'
@@ -1138,13 +1139,15 @@ function renderSupervisorReadings() {
 
     const filtered = readings.filter(r => {
         const time = r.timestamp || new Date(r.datetime).getTime();
-        const matchPeriod = activeSupervisorPeriod === 'weekly' 
+        const isRecent = time >= (now.getTime() - 24 * 60 * 60 * 1000);
+        const isPending = r.status === 'pending' || r.status === 'verified_by_sup';
+        const matchPeriod = isPending || (activeSupervisorPeriod === 'weekly' 
             ? (time >= sevenDaysAgo.getTime() && time <= now.getTime())
-            : (r.datetime && r.datetime.startsWith(todayStr));
+            : (isRecent || (r.datetime && (r.datetime.startsWith(todayStr) || r.datetime.includes(now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }))))));
 
         const matchMeter = filterMeter === 'all' || r.meterId === filterMeter;
         const matchStatus = filterStatus === 'all' || 
-            (filterStatus === 'pending' && (r.status === 'pending' || r.status === 'verified_by_sup')) || 
+            (filterStatus === 'pending' && isPending) || 
             r.status === filterStatus;
         const matchTech = filterTech === 'all' || r.techId === filterTech;
         const matchSearch = r.meterName.toLowerCase().includes(search) || r.techName.toLowerCase().includes(search) || r.value.toString().includes(search);
@@ -1319,27 +1322,45 @@ function renderTechDashboard() {
     populateCaptureMeterDropdown(selectedCaptureLocation || '');
 }
 
+function getAssignedTechLocations(user = currentUser) {
+    if (!user || user.role !== 'technician') return getLocations().map(l => l.name);
+    if (user.assignedLocations && Array.isArray(user.assignedLocations) && user.assignedLocations.length > 0) {
+        return user.assignedLocations;
+    }
+    const map = {
+        'TECH-001': ['Substation Alpha (North Gate)', 'Thrill Valley Power Room', 'Thrill Valley Ride Control', 'Thrill Valley South', 'Generator Yard Alpha', 'Generator Yard Beta'],
+        'TECH-002': ['Main Food Plaza Rooftop', 'Main Food Plaza Basement', 'Admin HQ Building Ground Floor', 'Main Entrance Gate Complex'],
+        'TECH-003': ['Aqua World Pump House 1', 'Aqua World Plant Room 2', 'Aqua World Pump House 3'],
+        'TECH-004': ['Kids Zone Control Booth', 'Kids Zone East Pavilion', 'Mystic Zone Building B', 'Entertainment Complex', 'Lighting Control Panel 1', 'Lighting Control Panel 2']
+    };
+    return map[user.id?.toUpperCase()] || getLocations().slice(0, 4).map(l => l.name);
+}
+
 function populateTechLocationFilters() {
     const locSelect = document.getElementById('tech-filter-location');
     const zoneSelect = document.getElementById('tech-filter-zone');
     const capLocSelect = document.getElementById('capture-location-select');
     const locs = getLocations();
-    const zones = [...new Set(locs.map(l => l.zone || 'Central Utility'))];
+    const assignedLocNames = getAssignedTechLocations(currentUser);
+    const assignedZones = [...new Set(locs.filter(l => assignedLocNames.includes(l.name)).map(l => l.zone || 'Central Utility'))];
 
-    if (locSelect && locSelect.options.length <= 1) {
+    if (locSelect) {
         const curr = locSelect.value;
-        locSelect.innerHTML = '<option value="all">All Park Locations</option>' + 
-            locs.map(l => `<option value="${l.name}" ${l.name === curr ? 'selected' : ''}>${l.name}</option>`).join('');
+        locSelect.innerHTML = `<option value="all">All Assigned Locations (${assignedLocNames.length})</option>` + 
+            assignedLocNames.map(name => `<option value="${name}" ${name === curr ? 'selected' : ''}>${name}</option>`).join('');
+        if (locSelect.options.length > 1 && (curr === 'all' || !assignedLocNames.includes(curr))) {
+            locSelect.value = assignedLocNames[0] || 'all';
+        }
     }
-    if (zoneSelect && zoneSelect.options.length <= 1) {
+    if (zoneSelect) {
         const currZ = zoneSelect.value;
-        zoneSelect.innerHTML = '<option value="all">All Park Zones</option>' + 
-            zones.map(z => `<option value="${z}" ${z === currZ ? 'selected' : ''}>${z}</option>`).join('');
+        zoneSelect.innerHTML = '<option value="all">All Assigned Zones</option>' + 
+            assignedZones.map(z => `<option value="${z}" ${z === currZ ? 'selected' : ''}>${z}</option>`).join('');
     }
     if (capLocSelect) {
         const currCap = capLocSelect.value || selectedCaptureLocation;
-        capLocSelect.innerHTML = '<option value="">— All Park Locations —</option>' + 
-            locs.map(l => `<option value="${l.name}" ${l.name === currCap ? 'selected' : ''}>${l.name} (${l.zone || 'Central Utility'})</option>`).join('');
+        capLocSelect.innerHTML = '<option value="">— All Assigned Locations —</option>' + 
+            locs.filter(l => assignedLocNames.includes(l.name)).map(l => `<option value="${l.name}" ${l.name === currCap ? 'selected' : ''}>${l.name} (${l.zone || 'Central Utility'})</option>`).join('');
     }
 }
 
@@ -1349,7 +1370,12 @@ function populateCaptureMeterDropdown(locFilter = '') {
     const currentVal = select.value || selectedCaptureMeterId;
     select.innerHTML = '<option value="">— Choose a meter —</option>';
     
-    const meters = getMeters().filter(m => !locFilter || m.location === locFilter);
+    const assignedLocNames = getAssignedTechLocations(currentUser);
+    const meters = getMeters().filter(m => {
+        const matchesLoc = !locFilter || m.location === locFilter;
+        const isAssigned = currentUser?.role !== 'technician' || assignedLocNames.includes(m.location);
+        return matchesLoc && isAssigned;
+    });
     meters.forEach(m => {
         const opt = document.createElement('option');
         opt.value = m.id;
@@ -1366,12 +1392,14 @@ function renderTechMeters() {
     const search = (document.getElementById('meter-search')?.value || '').toLowerCase();
     const locFilter = document.getElementById('tech-filter-location')?.value || 'all';
     const zoneFilter = document.getElementById('tech-filter-zone')?.value || 'all';
+    const assignedLocNames = getAssignedTechLocations(currentUser);
 
     const filtered = meters.filter(m => {
+        const isAssigned = currentUser?.role !== 'technician' || assignedLocNames.includes(m.location);
         const matchSearch = m.id.toLowerCase().includes(search) || m.name.toLowerCase().includes(search) || m.location.toLowerCase().includes(search) || (m.zone || '').toLowerCase().includes(search);
         const matchLoc = locFilter === 'all' || m.location === locFilter;
         const matchZone = zoneFilter === 'all' || (m.zone || '') === zoneFilter;
-        return matchSearch && matchLoc && matchZone;
+        return isAssigned && matchSearch && matchLoc && matchZone;
     });
     document.getElementById('meter-count').textContent = `(${filtered.length})`;
 

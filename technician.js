@@ -144,6 +144,7 @@ function getAssignedLocationsList() {
 
 function renderPortalLocations() {
     const listContainer = document.getElementById('portal-locations-list');
+    const dropdown = document.getElementById('portal-location-dropdown');
     if (!listContainer) return;
 
     const assignedLocs = getAssignedLocationsList();
@@ -151,7 +152,14 @@ function renderPortalLocations() {
 
     if (assignedLocs.length === 0) {
         listContainer.innerHTML = `<div style="color:var(--text-muted);padding:1rem">No locations assigned. Please contact Administrator.</div>`;
+        if (dropdown) dropdown.innerHTML = `<option value="">— No assigned locations —</option>`;
         return;
+    }
+
+    if (dropdown) {
+        dropdown.innerHTML = assignedLocs.map(locName => `
+            <option value="${locName.replace(/"/g, '&quot;')}" ${locName === activePortalLocation ? 'selected' : ''}>📍 ${locName}</option>
+        `).join('');
     }
 
     listContainer.innerHTML = assignedLocs.map(locName => `
@@ -169,6 +177,12 @@ function renderPortalLocations() {
 function selectPortalLocation(locName) {
     activePortalLocation = locName;
     
+    // Update dropdown selection
+    const dropdown = document.getElementById('portal-location-dropdown');
+    if (dropdown && dropdown.value !== locName) {
+        dropdown.value = locName;
+    }
+
     // Update active class
     document.querySelectorAll('.loc-pill').forEach(pill => {
         pill.classList.toggle('active', pill.textContent.includes(locName));

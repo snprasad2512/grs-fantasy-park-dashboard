@@ -343,8 +343,15 @@
                     <h2>📍 Step 1: Select Your Assigned Park Location</h2>
                     <span id="assigned-loc-count" style="font-size:0.85rem;color:#22d3ee;font-weight:700;background:rgba(34,211,238,0.1);padding:4px 10px;border-radius:12px">0 Assigned</span>
                 </div>
-                <p style="font-size:0.9rem;color:var(--text-secondary);margin:0">Displaying only the locations assigned to your technician profile. Click a location below to view assigned energy meters:</p>
+                <p style="font-size:0.9rem;color:var(--text-secondary);margin:0 0 1rem">Select your assigned location from the dropdown or click a location pill below to view assigned energy meters:</p>
                 
+                <div style="margin-bottom:1.25rem">
+                    <label style="display:block;font-size:0.85rem;font-weight:700;color:#22d3ee;margin-bottom:6px">Assigned Location Dropdown</label>
+                    <select id="portal-location-dropdown" class="input-portal" style="width:100%;padding:12px 14px;font-size:1.02rem;background:rgba(17,24,39,0.9);color:#fff;border:1px solid rgba(34,211,238,0.4);border-radius:12px;font-weight:600;cursor:pointer" onchange="if(this.value) selectPortalLocation(this.value);">
+                        <!-- Populated by JS -->
+                    </select>
+                </div>
+
                 <div id="portal-locations-list" class="location-pills">
                     <!-- Dynamic Location Pills -->
                 </div>
